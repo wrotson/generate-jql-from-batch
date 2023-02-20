@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>JQL generator</title>
+  <style>
+      body {
+          font-family: sans-serif;
+      }
+      label {
+          display: block;
+          margin-top: 20px;
+          font-weight: bold;
+      }
+      textarea {
+          width: 33%;
+          height: 20em;
+          font-family: monospace;
+      }
+      #results {
+          margin-top: 20px;
+          white-space: pre-wrap;
+          font-family: monospace;
+          border: 1px solid #ccc;
+          padding: 10px;
+      }
+      .radio-buttons {
+          display: flex;
+          flex-direction: row;
+      }
+      .radio-buttons label {
+          margin-right: 10px;
+      }
+  </style>
+</head>
+<body>
+<form onsubmit="generateJql(event)">
+  <label>Select environment:</label>
+  <div class="radio-buttons">
+    <label for="fe">Front-end (FE)</label>
+    <input type="radio" id="fe" name="environment" value="fe" checked>
+    <label for="be">Back-end (BE)</label>
+    <input type="radio" id="be" name="environment" value="be">
+  </div>
+  <label for="message">Enter commit message:</label>
+  <textarea id="message"></textarea>
+  <div><button type="submit">Generate JQL</button></div>
+</form>
+<div id="results"></div>
+<script>
+  function generateJql(event) {
+    event.preventDefault();
+    const environment = document.querySelector('input[name="environment"]:checked').value;
+    const message = document.querySelector('#message').value.trim();
+    const lines = message.split('\n');
+    let jql = '';
+    if (environment === 'fe') {
+      jql = generateJqlFE(lines);
+    } else if (environment === 'be') {
+      jql = generateJqlBE(lines);
+    }
+    document.querySelector('#results').textContent = jql;
+  }
+
+  function generateJqlFE(commits) {
+    const ticketsIDs = [];
+    commits.forEach(line => {
+      const spaceIndex = line.indexOf(' ');
+      const colonIndex = line.indexOf(':');
+      if (colonIndex !== -1) {
+        ticketsIDs.push(line.substring(spaceIndex + 1, colonIndex));
+      }
+    });
+    return `key in (${ticketsIDs.toString()}) order by created DESC`;
+  }
+
+  function generateJqlBE(commits) {
+    const ticketsIDs = [];
+    commits.forEach(line => {
+      const matches = line.match(/\b[A-Z]+-\d+\b/g);
+      if (matches) {
+        matches.forEach(match => {
+          if (!match.includes("STAGING") && !match.includes("PRODUCTION")) {
+            ticketsIDs.push(match);
+          }
+        });
+      }
+    });
+    return `key in (${ticketsIDs.join()}) order by created DESC`;
+  }
+</script>
+</body>
+</html>
