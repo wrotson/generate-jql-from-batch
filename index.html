@@ -12,7 +12,7 @@
       font-weight: bold;
     }
     textarea {
-      width: 33%;
+      width: 50%;
       height: 20em;
       font-family: monospace;
     }
@@ -31,8 +31,11 @@
   <textarea id="message"></textarea>
   <div><button type="submit">Generate JQL</button></div>
 </form>
-<div id="results"></div>
-<div id="link"></div>
+<div>
+  <label for="results">Result:</label>
+</div>
+<div id="results" class="hidden"></div>
+<div id="link" class="hidden"></div>
 <script>
   function generateJql(event) {
     event.preventDefault();
@@ -49,9 +52,12 @@
     });
     const jql = `key in (${ticketsIDs.join()}) order by created DESC`;
     const baseUrl = 'https://knowde.atlassian.net/issues/?jql=';
+    const query = document.querySelector('#results');
     const link = document.querySelector('#link');
+    query.textContent = jql;
+    query.classList.remove('hidden');
     link.innerHTML = `<a href="${baseUrl + encodeURIComponent(jql)}" target="_blank">Navigate to scoped results</a>`;
-    document.querySelector('#results').textContent = jql;
+    link.classList.remove('hidden');
   }
 </script>
 </body>
