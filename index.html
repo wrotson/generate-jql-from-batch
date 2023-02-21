@@ -3,90 +3,55 @@
 <head>
   <title>JQL generator</title>
   <style>
-      body {
-          font-family: sans-serif;
-      }
-      label {
-          display: block;
-          margin-top: 10px;
-          margin-bottom: 10px;
-          font-weight: bold;
-      }
-      textarea {
-          width: 50%;
-          height: 20em;
-          font-family: monospace;
-      }
-      #results {
-          margin-top: 20px;
-          white-space: pre-wrap;
-          font-family: monospace;
-          border: 1px solid #ccc;
-          padding: 10px;
-      }
-      .radio-buttons {
-          display: flex;
-          flex-direction: row;
-      }
-      .radio-buttons label {
-          margin-right: 2px;
-      }
+    body {
+      font-family: sans-serif;
+    }
+    label {
+      display: block;
+      margin-top: 20px;
+      font-weight: bold;
+    }
+    textarea {
+      width: 33%;
+      height: 20em;
+      font-family: monospace;
+    }
+    #results {
+      margin-top: 20px;
+      white-space: pre-wrap;
+      font-family: monospace;
+      border: 1px solid #ccc;
+      padding: 10px;
+    }
   </style>
 </head>
 <body>
 <form onsubmit="generateJql(event)">
-  <label>Select environment:</label>
-  <div class="radio-buttons">
-    <label for="fe">Front-end (FE)</label>
-    <input type="radio" id="fe" name="environment" value="fe" checked>
-    <label for="be">Back-end (BE)</label>
-    <input type="radio" id="be" name="environment" value="be">
-  </div>
-  <label for="message">Enter commit message:</label>
+  <label for="message">Enter batch message:</label>
   <textarea id="message"></textarea>
   <div><button type="submit">Generate JQL</button></div>
 </form>
 <div id="results"></div>
+<div id="link"></div>
 <script>
   function generateJql(event) {
     event.preventDefault();
-    const environment = document.querySelector('input[name="environment"]:checked').value;
     const message = document.querySelector('#message').value.trim();
     const lines = message.split('\n');
-    let jql = '';
-    if (environment === 'fe') {
-      jql = generateJqlFE(lines);
-    } else if (environment === 'be') {
-      jql = generateJqlBE(lines);
-    }
-    document.querySelector('#results').textContent = jql;
-  }
-
-  function generateJqlFE(commits) {
     const ticketsIDs = [];
-    commits.forEach(line => {
-      const spaceIndex = line.indexOf(' ');
-      const colonIndex = line.indexOf(':');
-      if (colonIndex !== -1) {
-        ticketsIDs.push(line.substring(spaceIndex + 1, colonIndex));
-      }
-    });
-    return `key in (${ticketsIDs.toString()}) order by created DESC`;
-  }
-
-  function generateJqlBE(commits) {
-    const ticketsIDs = [];
-    commits.forEach(line => {
-      const matches = line.match(/\b[A-Z]+-\d+\b/g);
+    lines.forEach(line => {
+      const matches = line.match(/[A-Z]+-[0-9]+/);
       if (matches) {
         matches.forEach(match => {
-          if (!match.includes("STAGING") && !match.includes("PRODUCTION")) {
-            ticketsIDs.push(match);
-          }
+          ticketsIDs.push(match);
         });
       }
     });
-    return `key in (${ticketsIDs.join()}) order by created DESC`;
+    const jql = `key in (${ticketsIDs.join()}) order by created DESC`;
+    const baseUrl = 'https://knowde.atlassian.net/issues/?jql=';
+    const link = document.querySelector('#link');
+    link.innerHTML = `<a href="${baseUrl + encodeURIComponent(jql)}" target="_blank">Navigate to scoped results</a>`;
+    document.querySelector('#results').textContent = jql;
   }
 </script>
 </body>
