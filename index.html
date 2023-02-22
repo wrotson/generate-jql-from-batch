@@ -63,7 +63,7 @@
       }
     });
     const jql = `key in (${ticketsIDs.join()}) order by created DESC`;
-    const baseUrl = 'https://knowe.atlassian.net/issues/?jql=';
+    const baseUrl = 'https://knowde.atlassian.net/issues/?jql=';
     const query = document.querySelector('#results');
     const link = document.querySelector('#link');
     query.textContent = jql;
