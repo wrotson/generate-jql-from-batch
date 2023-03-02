@@ -10,6 +10,7 @@
     label {
       display: block;
       margin-top: 20px;
+      margin-bottom: 20px;
       font-weight: bold;
     }
     textarea {
@@ -41,7 +42,17 @@
 <form onsubmit="generateJql(event)">
   <label for="message"><i class="fa fa-comments-o"></i> Enter batch message:</label>
   <textarea id="message"></textarea>
-  <div><button type="submit"><i class="fa fa-magic"></i> Generate JQL</button></div>
+  <div>
+    <label>
+      <input type="radio" name="exclude-convo" value="yes" checked> Exclude lines containing "CONVO"
+    </label>
+    <label>
+      <input type="radio" name="exclude-convo" value="no"> Include lines containing "CONVO"
+    </label>
+  </div>
+  <div>
+    <button type="submit"><i class="fa fa-magic"></i> Generate JQL</button>
+  </div>
 </form>
 <div>
   <label for="results"><i class="fa fa-tasks"></i> Result:</label>
@@ -52,14 +63,14 @@
   function generateJql(event) {
     event.preventDefault();
     const message = document.querySelector('#message').value.trim();
+    const excludeConvo = document.querySelector('input[name="exclude-convo"]:checked').value === 'yes';
     const lines = message.split('\n');
     const ticketsIDs = [];
     lines.forEach(line => {
-      if(line.includes('CONVO')) return;
+      if (excludeConvo && line.includes('CONVO')) return;
       const matches = line.match(/[A-Z]+-[0-9]+/);
       if (matches) {
         matches.forEach(match => {
-          console.log(match)
           ticketsIDs.push(match);
         });
       }
