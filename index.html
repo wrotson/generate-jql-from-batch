@@ -55,9 +55,11 @@
     const lines = message.split('\n');
     const ticketsIDs = [];
     lines.forEach(line => {
+      if(line.includes('CONVO')) return;
       const matches = line.match(/[A-Z]+-[0-9]+/);
       if (matches) {
         matches.forEach(match => {
+          console.log(match)
           ticketsIDs.push(match);
         });
       }
