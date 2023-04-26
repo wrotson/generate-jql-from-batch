@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>JQL generator</title>
+  <title>Release message generator</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
   <style>
     body {
@@ -58,23 +58,152 @@
       margin-top: 20px;
       font-weight: bold;
     }
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 60px;
+      height: 34px;
+    }
+
+    /* Hide default HTML checkbox */
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    /* The slider */
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #ccc;
+      -webkit-transition: .4s;
+      transition: .4s;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 26px;
+      width: 26px;
+      left: 4px;
+      bottom: 4px;
+      background-color: white;
+      -webkit-transition: .4s;
+      transition: .4s;
+    }
+
+    input:checked + .slider {
+      background-color: #2196F3;
+    }
+
+    input:focus + .slider {
+      box-shadow: 0 0 1px #2196F3;
+    }
+
+    input:checked + .slider:before {
+      -webkit-transform: translateX(26px);
+      -ms-transform: translateX(26px);
+      transform: translateX(26px);
+    }
+
+    /* Rounded sliders */
+    .slider.round {
+      border-radius: 34px;
+    }
+
+    .slider.round:before {
+      border-radius: 50%;
+    }
+
+    .switch-container {
+      display: inline-flex;
+      align-items: center;
+    }
+
+    .batch-type-label {
+      margin-left: 10px;
+      font-weight: bold;
+      font-size: 20px;
+    }
+
+    .batch-type-label:first-child {
+      margin-right: 10px;
+    }
+
+    #fe-options div,
+    #be-options div {
+      display: inline-block;
+      margin-right: 10px;
+    }
+
+    .validation-message {
+      display: block;
+      color: red;
+      font-size: 10px;
+      margin-top: 4px;
+    }
+
+    .input-field {
+      display: inline-block;
+      vertical-align: top;
+      margin-right: 10px;
+    }
+
+    .input-field:last-child {
+      margin-right: 0;
+    }
   </style>
 <body>
 <div class="form-wrapper">
   <div class="form">
+    <div class="switch-container">
+      <span class="batch-type-label">FE</span>
+      <label class="switch">
+        <input type="checkbox" onclick="toggleBatchType()">
+        <span class="slider round"></span>
+      </label>
+      <span class="batch-type-label">BE</span>
+    </div>
     <form onsubmit="generateJql(event)">
       <label for="message"><i class="fa fa-comments-o"></i> Enter batch message:</label>
       <textarea id="message"></textarea>
+      <div id="fe-options">
+        <div class="input-field">
+          <label for="angular-version">frontend-angular version:</label>
+          <input type="text" id="angular-version">
+          <span class="validation-message"></span>
+        </div>
+        <div class="input-field">
+          <label for="hp-version">home-page version:</label>
+          <input type="text" id="hp-version">
+          <span class="validation-message"></span>
+        </div>
+        <div class="input-field">
+          <label for="bp-version">browse-page version:</label>
+          <input type="text" id="bp-version">
+          <span class="validation-message"></span>
+        </div>
+      </div>
+      <div id="be-options" class="hidden">
+        <div class="input-field">
+          <label for="knowde-web-version">knowde-web version:</label>
+          <input type="text" id="knowde-web-version">
+          <span class="validation-message"></span>
+        </div>
+      </div>
       <div>
         <label>
-          <input type="radio" name="exclude-convo" value="yes" checked> Exclude lines containing "CONVO" - for FE batches
-        </label>
-        <label>
-          <input type="radio" name="exclude-convo" value="no"> Include lines containing "CONVO" - for BE batches
+          <input type="checkbox" id="exclude-convo-checkbox" checked>
+          Exclude lines containing "CONVO"
         </label>
       </div>
       <div>
-        <button type="submit"><i class="fa fa-magic"></i> Generate JQL</button>
+        <button type="submit"><i class="fa fa-magic"></i> Generate release message</button>
       </div>
     </form>
     <div>
@@ -91,26 +220,95 @@
 
 
 <script>
+  function checkVersionInputs() {
+    const inputs = document.querySelectorAll('#fe-options input, #be-options input');
+    inputs.forEach(input => {
+      const value = input.value.trim();
+      if (!value.match(/^\d{1,2}\.\d{1,3}\.\d{1}$/) && value !== '') {
+        input.classList.add('invalid');
+        input.nextElementSibling.textContent = 'Version doesn\'t meet pattern /^\d{1,2}\.\d{1,3}\.\d{1}$/';
+      } else {
+        input.classList.remove('invalid');
+        input.nextElementSibling.textContent = '';
+      }
+    });
+  }
+
+  function toggleBatchType() {
+    const isChecked = document.querySelector('.switch input').checked;
+    if (isChecked) {
+      document.querySelector('#fe-options').classList.add('hidden');
+      document.querySelector('#be-options').classList.remove('hidden');
+      document.querySelector('#exclude-convo-checkbox').checked = false;
+    } else {
+      document.querySelector('#fe-options').classList.remove('hidden');
+      document.querySelector('#be-options').classList.add('hidden');
+      document.querySelector('#exclude-convo-checkbox').checked = true;
+    }
+  }
+
   function generateJql(event) {
     event.preventDefault();
+    checkVersionInputs();
     const message = document.querySelector('#message').value.trim();
-    const excludeConvo = document.querySelector('input[name="exclude-convo"]:checked').value === 'yes';
+    const excludeConvo = document.querySelector('#exclude-convo-checkbox').checked;
     const lines = message.split('\n');
     const ticketsIDs = [];
-    lines.forEach(line => {
+    lines.forEach((line) => {
       if (excludeConvo && line.includes('CONVO')) return;
       const matches = line.match(/[A-Z]+-[0-9]+/);
       if (matches) {
-        matches.forEach(match => {
+        matches.forEach((match) => {
           ticketsIDs.push(match);
         });
       }
     });
+
     const jql = `key in (${ticketsIDs.join()}) order by created DESC`;
     const baseUrl = 'https://knowde.atlassian.net/issues/?jql=';
     const query = document.querySelector('#results');
     const link = document.querySelector('#link');
-    query.textContent = jql;
+
+    let queryHtml = ''
+    const tags = [];
+    const productionBuilds = [];
+    if (document.querySelector('.switch input').checked) {
+      const knowdeWebVersion = document.querySelector('#knowde-web-version').value.trim();
+      if (knowdeWebVersion !== '') {
+        tags.push(`knowde-web TAG: https://github.com/knowde/knowde-web/releases/tag/v${knowdeWebVersion}`);
+        productionBuilds.push(`knowde-web - https://github.com/knowde/knowde-web/actions?query=branch%3Av${knowdeWebVersion}`);
+      }
+    } else {
+      const angularVersion = document.querySelector('#angular-version').value.trim();
+      const hpVersion = document.querySelector('#hp-version').value.trim();
+      const bpVersion = document.querySelector('#bp-version').value.trim();
+      if (angularVersion !== '') {
+        tags.push(`Angular TAG: https://github.com/knowde/frontend/releases/tag/frontend-angular@${angularVersion}`)
+        productionBuilds.push(`Angular - https://github.com/knowde/frontend/actions/workflows/deploy-frontend-angular-release.yaml?query=branch%3Afrontend-angular@${angularVersion}`)
+      }
+      if (hpVersion !== '') {
+        tags.push(`HomePage TAG: https://github.com/knowde/frontend/releases/tag/home-page@${hpVersion}`)
+        productionBuilds.push(`HomePage - https://github.com/knowde/frontend/actions/workflows/deploy-home-page-release.yaml?query=branch%3Ahome-page@${hpVersion}`)
+      }
+      if (bpVersion !== '') {
+        tags.push(`BrowsePages TAG: https://github.com/knowde/frontend/releases/tag/browse-pages@${bpVersion}`)
+        productionBuilds.push(`BrowsePages - https://github.com/knowde/frontend/actions/workflows/deploy-browse-pages-release.yaml?query=branch%3Abrowse-pages@@${bpVersion}`)
+      }
+    }
+
+    tags.forEach(tag => queryHtml+=`${tag}\n`)
+    queryHtml+='\nProduction builds\n'
+    productionBuilds.forEach(buildUrl => queryHtml+=`${buildUrl}\n`)
+    queryHtml+=`\nTickets: ${baseUrl + encodeURIComponent(jql)}\n`
+    queryHtml+='\nStatus\n' +
+            '[] Batch deployed to staging\n' +
+            '[] Tickets tested\n' +
+            '[] Smoke tests completed\n' +
+            '[] Batch deployed to prod\n' +
+            '[] Smoke tests completed'
+
+
+    query.innerHTML = queryHtml;
     query.classList.remove('hidden');
     const linkHtml = `<a href="${baseUrl + encodeURIComponent(jql)}" target="_blank">Navigate to scoped results</a><span class="copy-icon" onclick="copyLink()"><i class="fa fa-copy"></i></span>`;
     link.innerHTML = linkHtml;
