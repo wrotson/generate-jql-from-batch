@@ -210,7 +210,7 @@
       <label for="results"><i class="fa fa-tasks"></i> Result:</label>
     </div>
     <div id="results" class="hidden"></div>
-    <div id="link" class="hidden"></div>
+    <div id="copy-results" class="hidden"></div>
   </div>
   <div class="image">
     <h2 class="instructions">Instructions</h2>
@@ -267,7 +267,7 @@
     const jql = `key in (${ticketsIDs.join()}) order by created DESC`;
     const baseUrl = 'https://knowde.atlassian.net/issues/?jql=';
     const query = document.querySelector('#results');
-    const link = document.querySelector('#link');
+    const copyResults = document.querySelector('#copy-results');
 
     let queryHtml = ''
     const tags = [];
@@ -296,29 +296,29 @@
       }
     }
 
-    tags.forEach(tag => queryHtml+=`${tag}\n`)
-    queryHtml+='\nProduction builds\n'
-    productionBuilds.forEach(buildUrl => queryHtml+=`${buildUrl}\n`)
-    queryHtml+=`\nTickets: ${baseUrl + encodeURIComponent(jql)}\n`
-    queryHtml+='\nStatus\n' +
-            '[] Batch deployed to staging\n' +
-            '[] Tickets tested\n' +
-            '[] Smoke tests completed\n' +
-            '[] Batch deployed to prod\n' +
+    tags.forEach(tag => queryHtml+=`${tag}<br>`)
+    queryHtml+='<br>Production builds<br>'
+    productionBuilds.forEach(buildUrl => queryHtml+=`${buildUrl}<br>`)
+    queryHtml+=`<br>Tickets: ${baseUrl + encodeURIComponent(jql)}<br>`
+    queryHtml+='<br>Status<br>' +
+            '[] Batch deployed to staging<br>' +
+            '[] Tickets tested<br>' +
+            '[] Smoke tests completed<br>' +
+            '[] Batch deployed to prod<br>' +
             '[] Smoke tests completed'
 
 
     query.innerHTML = queryHtml;
     query.classList.remove('hidden');
-    const linkHtml = `<a href="${baseUrl + encodeURIComponent(jql)}" target="_blank">Navigate to scoped results</a><span class="copy-icon" onclick="copyLink()"><i class="fa fa-copy"></i></span>`;
-    link.innerHTML = linkHtml;
-    link.classList.remove('hidden');
+    copyResults.classList.remove('hidden');
+    copyResults.innerHTML = `<span class="copy-icon" onclick="copyResults()"><i class="fa fa-copy"></i> Copy batch message </span>`
   }
 
-  function copyLink() {
-    const link = document.querySelector('#link a');
-    const input = document.createElement('input');
-    input.setAttribute('value', link.href);
+  function copyResults() {
+    const results = document.querySelector('#results');
+    const input = document.createElement('textarea');
+    input.setAttribute('readonly', '');
+    input.value = results.innerHTML.replace(/<br>/g, '\n');
     document.body.appendChild(input);
     input.select();
     document.execCommand('copy');
@@ -326,7 +326,7 @@
 
     const modal = document.createElement('div');
     modal.style.cssText = 'position: fixed; top: 50px; left: 50%; transform: translate(-50%, -50%); padding: 10px; background-color: rgba(0, 0, 0, 0.5); color: white; border-radius: 5px; opacity: 0; transition: opacity 0.5s;';
-    modal.textContent = 'Link copied to clipboard!';
+    modal.textContent = 'Batch message copied to clipboard!';
     document.body.appendChild(modal);
 
     setTimeout(() => {
